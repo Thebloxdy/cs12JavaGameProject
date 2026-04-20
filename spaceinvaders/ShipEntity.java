@@ -27,10 +27,12 @@ public class ShipEntity extends Entity {
       return;
     } // if
     // stop at right side of screen
-    if ((dx > 0) && (x > 750)) {
+    if ((dx > 0) && (x > 1860)) {
       return;
     } // if
     
+    if ((dy < 0) && (y < 10) )
+    	return;
  
    
     super.move(delta);  // calls the move method in Entity
@@ -39,8 +41,8 @@ public class ShipEntity extends Entity {
   public void gravity() {
 	 
 	 
-	  if (this.y >= 500) {
-		  this.y = 500;
+	  if (this.y >= 15360) {
+		  this.y = 15360;
 		  this.setVerticalMovement(0);
 		  return;
 	  }
@@ -63,12 +65,14 @@ public class ShipEntity extends Entity {
         game.notifyDeath();
      } // if
      if (other instanceof PlatformEntity) {
-    	 if (other.y >=  this.y) {
-    		 this.setVerticalMovement(0);
+    	 if (other.y >=  this.y + 30) {
+    		 System.out.println("touched");
     		 this.y = other.y - 62;
+    		 
     	 }
+    	 
     	 if (other.y < this.y) {
-    		 gravity();
+    		 //gravity();
     		 this.y = other.y + 20;
     	 }
      }

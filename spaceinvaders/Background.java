@@ -12,23 +12,25 @@ import javax.imageio.ImageIO;
 
 public class Background {
 	  private Image image; //backgroud image
+	  private Game game; // the game in which the alien exists
     private int x; //x coordinate
     private int y; //y coordinate
+    public boolean atBottom;
 
  
     //constructor
-    public Background() {
-        this(0,0);
+    public Background(Game g) {
+        this(g,0,0);
     }//Background
  
     //initializes constructor
-    public Background(int x, int y) {
+    public Background(Game g, int x, int y) {
         this.x = x;
         this.y = y;
  
         // try to open the background image file 
         try {
-        	image = ImageIO.read(getClass().getClassLoader().getResource("background.jpg"));
+        	image = ImageIO.read(getClass().getClassLoader().getResource("bg1.png"));
         	System.out.println("here1");
         	draw(image.getGraphics());
         }
@@ -39,38 +41,68 @@ public class Background {
    	//method that draws the image onto the Graphics object passed
     public void draw(Graphics window) {
         //draw the image onto the Graphics reference
-        window.drawImage(image, getX(), getY(), 1920, 1080, null);
+        window.drawImage(image, getX(), getY(), 1920, 15360, null);
  
         //move the x position left for next time
         this.y -= 18;
  
         //check to see if the image has gone off stage left
-        if (this.y <= -1080) {
+        if (this.x <= -1080) {
  
             //if it has, line it back up so that its left edge is lined up to the right side of the other background image
-            this.y = this.y + 1080 * 2;
+            this.x = this.y + 1080 * 2;
         }//if
  
     }//draw
-    public void draw(Graphics window, int i) {
-    	if (i == 0) {
-    		return;
-    	}
-    	if (i == 1) {
-    		this.y -= 20;
-    	}
-    	if (i == 2) {
-    		this.y += 20;
-    	}
-    	if (i == 3) {
-    		this.x -= 20;
-    	}
-    	if (i == 4) {
-    		this.x += 20;
-    	}
+   
+    public void draw(Graphics window, double i ) {
     	
+    	 window.drawImage(image, getX(), getY(), 1920, 15360, null);
+    	 
+    	 if (i == 1.0){
+    		 //not moving
+    		 return;
+    	}
+    	 
+    	 if (i == 2.0) {
+    		 //down
+    		 this.y += 12;
+    		 atBottom = false;
+	    	 if (this.y >= 1080) {
+	    		 this.y = -1080;
+	    	 }
+	    	 return;
+    	 }
+    	 if ( i == 0.0) {
+    		 //up
+	    	 this.y -= 12;
+	    	 atBottom = false;
+	    	 if (this.y <= -1 * (15360 - 1080)) {
+	    		 this.y = -1 * (15360 - 1080);
+	    		 atBottom = true;
+	    		 return;
+	    	 }
+    	 }
+    	 /*if (i == 3.0) {
+    		 //sidesway right
+    		 this.x += 12;
+    		 
+    		 if (this.x >= 1920) {
+    			 this.x = - 1920;
+    		 }
+    		 return;
+    	 }
+    	 if (i == 4.0) {
+    		 //sidesway left
+    		 this.x -= 12;
+    		 
+    		 if (this.x <= -1920) {
+    			 this.x =  1920;
+    		 }
+    		 return;
+    	 }*/
+    	 
     }
-    
    
  
     public void setX(int x) {

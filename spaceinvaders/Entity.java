@@ -108,5 +108,12 @@
 		// TODO Auto-generated method stub
 		
 	  }
+	  public void moveDown () {
+			
+		  }
+		  public void moveUp() {
+			 
+		  }
+
 
  } // Entity class

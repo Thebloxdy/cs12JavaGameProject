@@ -11,8 +11,8 @@ import java.util.ArrayList;
 
 public class Game extends Canvas {
 		
-		private int height = 800;
-		private int width = 1000;
+		private int height = 1080;
+		private int width = 1920;
 		
       	private BufferStrategy strategy;   // take advantage of accelerated graphics
         private boolean waitingForKeyPress = true;  // true if game held up until
@@ -22,6 +22,10 @@ public class Game extends Canvas {
         private boolean firePressed = false; // true if firing
         private boolean pausedPressed = false; 
         private boolean upPressed = false;
+        
+        private boolean jumped = false;
+        private boolean inAir = false;
+        
 
         private boolean gameRunning = true;
         private boolean isGamePaused = false;
@@ -32,9 +36,11 @@ public class Game extends Canvas {
                                                             // to remove this loop
         private Entity ship;  // the ship
         private Entity platform;  // the ship
+        private Entity turret;
+        private Entity floor;
         private double moveSpeed = 600; // hor. vel. of ship (px/s)
         private long lastFire = 0; // time last shot fired
-        private long firingInterval = 300; // interval between shots (ms)
+        private long firingInterval = 5000; // interval between shots (ms)
         private int alienCount; // # of aliens left on screen
 
         private String message = ""; // message to display while waiting
@@ -55,11 +61,11 @@ public class Game extends Canvas {
     		JPanel panel = (JPanel) container.getContentPane();
     
     		// set up the resolution of the game
-    		panel.setPreferredSize(new Dimension(800,600));
+    		panel.setPreferredSize(new Dimension(width,height));
     		panel.setLayout(null);
     
     		// set up canvas size (this) and add to frame
-    		setBounds(0,0,800,600);
+    		setBounds(0,0,width,height);
     		panel.add(this);
     
     		// Tell AWT not to bother repainting canvas since that will
@@ -105,7 +111,7 @@ public class Game extends Canvas {
     	 */
     	private void initEntities() {
               // create the ship and put in center of screen
-              ship = new ShipEntity(this, "sprites/ship.png", 0, 550);
+              ship = new ShipEntity(this, "sprites/ship.png", 500, 550);
               entities.add(ship);
     
               // create a block of aliens (5x12)
@@ -121,8 +127,17 @@ public class Game extends Canvas {
               } // outer for
               */
               
-             platform = new PlatformEntity(this, "sprites/platform.png", 500, 200);
+             platform = new PlatformEntity(this, "sprites/platform.png", 200, 300);
+             
              entities.add(platform);
+             
+             turret = new Turret("sprites/turret.png", 300, 300);
+             
+             entities.add(turret);
+             
+             floor = new PlatformEntity(this, "sprites/floor.png", 0, 800);
+             
+             entities.add(floor);
     	} // initEntities
 
         /* Notification from a game entity that the logic of the game
@@ -189,6 +204,20 @@ public class Game extends Canvas {
                             ship.getX() + 10, ship.getY() - 30);
           entities.add(shot);
         } // tryToFire
+        public void tryToFire(int turretX, int turretY) {
+            // check that we've waited long enough to fire
+          
+        	  if ((System.currentTimeMillis() - lastFire) < firingInterval){
+              return;
+            } // if
+          
+            // otherwise add a shot
+            
+            lastFire = System.currentTimeMillis();
+            ShotEntity shot = new ShotEntity(this, "sprites/shot.gif", 
+                              turret.getX(), turret.getY());
+            entities.add(shot);
+          } // tryToFire
 
 	/*
 	 * gameLoop
@@ -206,9 +235,7 @@ public class Game extends Canvas {
           long lastLoopTime = System.currentTimeMillis();
           
           BufferedImage back = null; //background image
-          Background backOne = new Background(); //first copy of background image (used for moving background)
-          Background backTwo = new Background(backOne.getImageWidth(), 0); //second copy of background image (used for moving background)
-          System.out.println("here");
+          Background backOne = new Background(this, 0, -1 * (15360 - 1080)); //first copy of background image (used for moving background)
           // keep loop running until game ends
           while (gameRunning) {
             
@@ -231,18 +258,22 @@ public class Game extends Canvas {
             //creates a buffer to draw to
             Graphics buffer = back.createGraphics();
 
-            //puts the two copies of the background image onto the buffer
-            backOne.draw(buffer);
-            backTwo.draw(buffer);
+            backOne.draw(buffer, 1.0);
+            
+            g.drawImage(back, null, 0, 0);
             
             //draws the image onto the window
-            g.drawImage(back, null, 0, 0);
+           
             if(pausedPressed) {
             	isGamePaused = !isGamePaused;
             	lastLoopTime -= System.currentTimeMillis() - gamePaused;
             	continue;
             	
             }// if
+            
+            if (ship.getY() >= 1080) {
+            	notifyDeath();
+            }
             
            
             
@@ -259,7 +290,17 @@ public class Game extends Canvas {
             for (int i = 0; i < entities.size(); i++) {
                Entity entity = (Entity) entities.get(i);
                entity.draw(g);
+               
             } // for
+            
+            tryToFire(turret.getX(), turret.getY());
+            for (int i = 0; i < entities.size(); i++) {
+            	if (entities.get(i) instanceof ShotEntity) {
+            		ShotEntity shot = (ShotEntity) entities.get(i); 
+            		shot.move(ship.getX(), ship.getY(), turret.getX(), turret.getY(), delta * 3);
+            	}
+            }
+            
 
             // brute force collisions, compare every entity
             // against every other entity.  If any collisions
@@ -305,28 +346,62 @@ public class Game extends Canvas {
             // ship should not move without user input
             ship.setHorizontalMovement(0);
 
-            // respond to user moving ship
             if ((leftPressed) && (!rightPressed)) {
-              ship.setHorizontalMovement(-moveSpeed);
-              
+            	ship.setHorizontalMovement(-moveSpeed);
+            	
+                
             } else if ((rightPressed) && (!leftPressed)) {
-              ship.setHorizontalMovement(moveSpeed);
-              
+                ship.setHorizontalMovement(moveSpeed);
+            	
+             
+                
             } // else
             
             if (upPressed) {
-            	ship.setVerticalMovement(-moveSpeed);
+            	//ship.setVerticalMovement(-moveSpeed);
+            	backOne.draw(buffer, 2.0);
+               platform.moveDown();
+               floor.moveDown();
+               
+               
+                
+                g.drawImage(back, null, 0, 0);
             }
-            if (!upPressed) {
-            	ship.gravity();
+            if (!upPressed && !backOne.atBottom) {
+            	
+            	//ship.gravity();
+            	platform.moveUp();
+            	floor.moveUp();
+            	backOne.draw(buffer, 0.0);
+                                
+                
+                g.drawImage(back, null, 0, 0);
             }
-
+            if (backOne.atBottom) {
+            	if (ship.y < 745) {
+            		ship.gravity();
+            		System.out.println(ship.y);
+            	}
+            	else ship.setVerticalMovement(0);
+            	backOne.draw(buffer, 0.0);
+            	
+            	g.drawImage(back, null, 0, 0);
+            }
+            if (backOne.atBottom && ship.y >= 750) {
+            	//ship.y = 750;
+            	System.out.println("corrected");
+            }
+            
+            
+            //puts the two copies of the background image onto the buffer
+            
             // if spacebar pressed, try to fire
             if (firePressed && !isGamePaused) {
               tryToFire();
             } // if
 
             // pause
+           
             try { Thread.sleep(10); } catch (Exception e) {}
 
           } // while

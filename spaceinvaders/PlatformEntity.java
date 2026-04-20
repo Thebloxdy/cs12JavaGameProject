@@ -11,5 +11,11 @@ public class PlatformEntity extends Entity{
 		// TODO Auto-generated method stub
 		
 	  }
+	  public void moveDown () {
+		this.y += 12;
+	  }
+	  public void moveUp() {
+		  this.y -= 12;
+	  }
 
 }
